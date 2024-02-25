@@ -1,0 +1,100 @@
+
+services:
+  postgresqldb:
+    container_name: postgresqldb
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=jobAppDb
+    restart: always
+
+  apiGatway:
+    image: api-gateway
+    container_name: apiGateway
+    ports:
+      - 9090:9090
+    depends_on:
+      - service-reg
+      - zipkin
+    restart: unless-stopped
+
+  companyms:
+    image: company-ms
+    container_name: company_ms
+    ports:
+      - 9091:9091
+    environment:
+      db-url: jdbc:postgresql://postgresqldb:5432/jobAppDb
+      db-username: postgres
+      db-password: postgres
+    depends_on:
+      - postgresqldb
+      - service-reg
+      - zipkin
+    restart: always
+
+  reviewms:
+    image: review-ms
+    container_name: review_ms
+    ports:
+      - 8083:8083
+    environment:
+      db-url: jdbc:postgresql://postgresqldb:5432/jobAppDb
+      db-username: postgres
+      db-password: postgres
+    depends_on:
+      - postgresqldb
+      - service-reg
+      - zipkin
+    restart: always
+
+  jobms:
+    image: job-ms
+    container_name: job_ms
+    ports:
+      - 8082:8082
+    environment:
+      db-url: jdbc:postgresql://postgresqldb:5432/jobAppDb
+      db-username: postgres
+      db-password: postgres
+    depends_on:
+      - postgresqldb
+      - service-reg
+      - zipkin
+      - config-server
+    restart: always
+
+  service-reg:
+    image: suryakant100/service-reg:latest
+    container_name: service-reg
+    ports:
+      - 8761:8761
+    restart: always
+
+  config-server:
+    image: config-server
+    container_name: config-server
+    ports:
+      - 8084:8084
+    restart: always
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - 9411:9411
+    restart: always
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - 5050:80
+    restart: unless-stopped
